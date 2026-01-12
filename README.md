@@ -20,7 +20,7 @@ source ~/.zshrc  # or source ~/.bashrc
 
 ### `wt <branch-name>`
 
-Creates a new git worktree in `trees/<branch-name>`.
+Creates a new git worktree in a sibling `trees/<repo-name>/<branch-name>` directory.
 
 **Behavior:**
 - If the branch exists: checks it out in the new worktree
@@ -33,8 +33,8 @@ Creates a new git worktree in `trees/<branch-name>`.
 ```bash
 $ wt feature-auth
 Creating worktree for branch: feature-auth
-Main directory: /Users/you/project
-Worktree directory: /Users/you/project/trees/feature-auth
+Main directory: /Users/you/code/project
+Worktree directory: /Users/you/code/trees/project/feature-auth
 ...
 # You're now in the worktree directory
 ```
@@ -88,7 +88,7 @@ dist
 .cache
 ```
 
-When you run `wt new-branch`, these files/directories will be copied from the main worktree to `trees/new-branch/`.
+When you run `wt new-branch`, these files/directories will be copied from the main worktree to the new worktree.
 
 ## Workflow Example
 
@@ -99,14 +99,14 @@ On branch main
 
 # Create a worktree for a new feature
 $ wt feature-login
-# Now in trees/feature-login with feature-login branch
+# Now in ../trees/project/feature-login with feature-login branch
 
 # Do your work
 $ git add .
 $ git commit -m "Add login feature"
 
 # Go back to main directory to create another worktree
-$ cd ../..
+$ cd /path/to/project  # or use: cd ../../project
 $ wt bugfix-header
 
 # Work on the bugfix
@@ -118,7 +118,7 @@ $ wtd feature-login
 # Or navigate into it and run: wtd
 
 # Clean up the bugfix worktree
-$ cd trees/bugfix-header
+$ cd ../trees/project/bugfix-header
 $ wtd
 # Returns you to main directory
 ```

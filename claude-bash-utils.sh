@@ -16,15 +16,17 @@ wt() {
     return 1
   fi
 
-  local WORKTREE_DIR="$MAIN_DIR/trees/$BRANCH"
+  local REPO_NAME=$(basename "$MAIN_DIR")
+  local PARENT_DIR=$(dirname "$MAIN_DIR")
+  local WORKTREE_DIR="$PARENT_DIR/trees/$REPO_NAME/$BRANCH"
   local WORKTREE_INCLUDE_FILE="$MAIN_DIR/.worktreeinclude"
 
   echo "Creating worktree for branch: $BRANCH"
   echo "Main directory: $MAIN_DIR"
   echo "Worktree directory: $WORKTREE_DIR"
 
-  # Create trees directory if it doesn't exist
-  mkdir -p "$MAIN_DIR/trees"
+  # Create trees directory if it doesn't exist (sibling to repo)
+  mkdir -p "$PARENT_DIR/trees/$REPO_NAME"
 
   # Check if branch exists
   if git show-ref --verify --quiet "refs/heads/$BRANCH"; then
