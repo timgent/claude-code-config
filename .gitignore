@@ -8,3 +8,4 @@ todos
 history.jsonl
 .claude
 plans
+commands/mv*
