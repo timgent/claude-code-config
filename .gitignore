@@ -9,3 +9,7 @@ history.jsonl
 .claude
 plans
 commands/mv*
+cache
+plugins/marketplaces
+settings.json
+stats-cache.json
