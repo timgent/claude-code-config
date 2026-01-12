@@ -28,12 +28,15 @@ wt() {
   # Create trees directory if it doesn't exist (sibling to repo)
   mkdir -p "$PARENT_DIR/trees/$REPO_NAME"
 
-  # Check if branch exists
+  # Check if branch exists locally or remotely
   if git show-ref --verify --quiet "refs/heads/$BRANCH"; then
-    echo "Branch $BRANCH exists, checking it out..."
+    echo "Local branch $BRANCH exists, checking it out..."
     git worktree add "$WORKTREE_DIR" "$BRANCH"
+  elif git show-ref --verify --quiet "refs/remotes/origin/$BRANCH"; then
+    echo "Remote branch origin/$BRANCH exists, creating local tracking branch..."
+    git worktree add --track -b "$BRANCH" "$WORKTREE_DIR" "origin/$BRANCH"
   else
-    echo "Branch $BRANCH doesn't exist, creating it..."
+    echo "Branch $BRANCH doesn't exist locally or remotely, creating it..."
     git worktree add -b "$BRANCH" "$WORKTREE_DIR"
   fi
 
