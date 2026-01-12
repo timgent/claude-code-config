@@ -35,31 +35,36 @@ wt() {
     git worktree add -b "$BRANCH" "$WORKTREE_DIR"
   fi
 
-  # Check if .worktreeinclude exists
-  if [ ! -f "$WORKTREE_INCLUDE_FILE" ]; then
-    echo "Warning: .worktreeinclude file not found, no files copied"
-    cd "$WORKTREE_DIR"
-    return 0
+  # Read .worktreeinclude and copy directories/files
+  if [ -f "$WORKTREE_INCLUDE_FILE" ]; then
+    echo "Copying files from .worktreeinclude..."
+    while IFS= read -r line || [ -n "$line" ]; do
+      # Skip empty lines
+      if [ -z "$line" ]; then
+        continue
+      fi
+
+      local SOURCE="$MAIN_DIR/$line"
+      local TARGET="$WORKTREE_DIR/$line"
+
+      if [ -e "$SOURCE" ]; then
+        echo "  Copying $line..."
+        cp -r "$SOURCE" "$TARGET"
+      else
+        echo "  Warning: $line does not exist in main directory, skipping"
+      fi
+    done <"$WORKTREE_INCLUDE_FILE"
+  else
+    echo "Warning: .worktreeinclude file not found"
   fi
 
-  # Read .worktreeinclude and copy directories/files
-  echo "Copying files from .worktreeinclude..."
-  while IFS= read -r line || [ -n "$line" ]; do
-    # Skip empty lines
-    if [ -z "$line" ]; then
-      continue
-    fi
-
-    local SOURCE="$MAIN_DIR/$line"
-    local TARGET="$WORKTREE_DIR/$line"
-
-    if [ -e "$SOURCE" ]; then
-      echo "  Copying $line..."
-      cp -r "$SOURCE" "$TARGET"
-    else
-      echo "  Warning: $line does not exist in main directory, skipping"
-    fi
-  done <"$WORKTREE_INCLUDE_FILE"
+  # Always copy Claude permissions file if it exists
+  local CLAUDE_SETTINGS="$MAIN_DIR/.claude/settings.local.json"
+  if [ -f "$CLAUDE_SETTINGS" ]; then
+    echo "  Copying .claude/settings.local.json..."
+    mkdir -p "$WORKTREE_DIR/.claude"
+    cp "$CLAUDE_SETTINGS" "$WORKTREE_DIR/.claude/settings.local.json"
+  fi
 
   echo ""
   echo "Worktree created successfully!"
