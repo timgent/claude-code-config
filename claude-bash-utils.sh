@@ -78,8 +78,25 @@ wt() {
 }
 
 # Worktree deletion function
-# Deletes a git worktree, its branch, and directory
+# Deletes a git worktree and directory (optionally deletes the branch with -d flag)
 wtd() {
+  local DELETE_BRANCH=false
+  local BRANCH_ARG=""
+
+  # Parse arguments
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      -d|--delete-branch)
+        DELETE_BRANCH=true
+        shift
+        ;;
+      *)
+        BRANCH_ARG="$1"
+        shift
+        ;;
+    esac
+  done
+
   local MAIN_DIR=$(git rev-parse --show-toplevel 2>/dev/null)
 
   if [ -z "$MAIN_DIR" ]; then
@@ -91,9 +108,9 @@ wtd() {
   local CURRENT_DIR=$(pwd)
 
   # Determine if we have a branch argument or need to detect current worktree
-  if [ -n "$1" ]; then
+  if [ -n "$BRANCH_ARG" ]; then
     # Mode 1: Branch name provided as argument
-    local BRANCH=$1
+    local BRANCH=$BRANCH_ARG
     local WORKTREE_PATH=""
     local FOUND=false
 
@@ -124,12 +141,14 @@ wtd() {
     # Remove the worktree
     git worktree remove --force "$WORKTREE_PATH" 2>/dev/null
 
-    # Delete the branch
-    if git show-ref --verify --quiet "refs/heads/$BRANCH"; then
-      git branch -D "$BRANCH"
-      echo "Branch '$BRANCH' deleted"
-    else
-      echo "Warning: Branch '$BRANCH' not found, skipping branch deletion"
+    # Delete the branch only if -d flag was passed
+    if [ "$DELETE_BRANCH" = true ]; then
+      if git show-ref --verify --quiet "refs/heads/$BRANCH"; then
+        git branch -D "$BRANCH"
+        echo "Branch '$BRANCH' deleted"
+      else
+        echo "Warning: Branch '$BRANCH' not found, skipping branch deletion"
+      fi
     fi
 
     # Clean up directory if it still exists
@@ -145,13 +164,14 @@ wtd() {
 
     # Check if we're in a linked worktree (git-dir contains /worktrees/)
     if [[ "$GIT_DIR" != *"/worktrees/"* ]]; then
-      echo "Usage: wtd <branch-name>"
+      echo "Usage: wtd [-d] [branch-name]"
       echo ""
-      echo "Deletes a worktree, its branch, and directory."
+      echo "Deletes a worktree and its directory."
       echo ""
       echo "Options:"
-      echo "  wtd <branch-name>  - Delete the worktree for the specified branch"
-      echo "  wtd                - Delete the current worktree (must be run from within a worktree)"
+      echo "  wtd <branch-name>     - Delete the worktree for the specified branch"
+      echo "  wtd                   - Delete the current worktree (must be run from within a worktree)"
+      echo "  -d, --delete-branch   - Also delete the branch"
       return 1
     fi
 
@@ -199,12 +219,14 @@ wtd() {
     # Remove the worktree
     git worktree remove --force "$WORKTREE_PATH" 2>/dev/null
 
-    # Delete the branch
-    if git show-ref --verify --quiet "refs/heads/$BRANCH"; then
-      git branch -D "$BRANCH"
-      echo "Branch '$BRANCH' deleted"
-    else
-      echo "Warning: Branch '$BRANCH' not found, skipping branch deletion"
+    # Delete the branch only if -d flag was passed
+    if [ "$DELETE_BRANCH" = true ]; then
+      if git show-ref --verify --quiet "refs/heads/$BRANCH"; then
+        git branch -D "$BRANCH"
+        echo "Branch '$BRANCH' deleted"
+      else
+        echo "Warning: Branch '$BRANCH' not found, skipping branch deletion"
+      fi
     fi
 
     # Clean up directory if it still exists
