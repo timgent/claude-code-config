@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "plugins": {
+    "pr-review-toolkit@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/timgent/.claude/plugins/cache/claude-plugins-official/pr-review-toolkit/96276205880a",
+        "version": "96276205880a",
+        "installedAt": "2026-01-19T20:53:23.632Z",
+        "lastUpdated": "2026-01-19T20:53:23.632Z",
+        "gitCommitSha": "96276205880a60fd66bbae981f5ab568e70c4cbf"
+      }
+    ],
+    "code-review@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/timgent/.claude/plugins/cache/claude-plugins-official/code-review/96276205880a",
+        "version": "96276205880a",
+        "installedAt": "2026-01-19T21:17:50.792Z",
+        "lastUpdated": "2026-01-19T21:17:50.792Z",
+        "gitCommitSha": "96276205880a60fd66bbae981f5ab568e70c4cbf"
+      }
+    ]
+  }
+}
