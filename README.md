@@ -7,7 +7,7 @@ Git worktree management utilities for efficient multi-branch workflows.
 Add this line to your `~/.zshrc` or `~/.bashrc`:
 
 ```bash
-source /Users/timgent/.claude/claude-bash-utils.sh
+source ~/.claude/claude-bash-utils.sh
 ```
 
 Then restart your shell or run:
