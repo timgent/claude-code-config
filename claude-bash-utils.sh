@@ -40,39 +40,51 @@ wt() {
     git worktree add -b "$BRANCH" "$WORKTREE_DIR"
   fi
 
-  # Read .worktreeinclude and copy directories/files
-  if [ -f "$WORKTREE_INCLUDE_FILE" ]; then
-    echo "Copying files from .worktreeinclude..."
-    while IFS= read -r line || [ -n "$line" ]; do
-      # Skip empty lines
-      if [ -z "$line" ]; then
-        continue
+  # Copy files in background so the shell is immediately usable
+  (
+    local copy_failed=false
+
+    if [ -f "$WORKTREE_INCLUDE_FILE" ]; then
+      while IFS= read -r line || [ -n "$line" ]; do
+        [ -z "$line" ] && continue
+        local SOURCE="$MAIN_DIR/$line"
+        local TARGET="$WORKTREE_DIR/$line"
+        if [ -e "$SOURCE" ]; then
+          echo "[wt] Copying $line..."
+          if ! cp -r "$SOURCE" "$TARGET"; then
+            echo "[wt] ERROR: Failed to copy $line"
+            copy_failed=true
+          fi
+        else
+          echo "[wt] Warning: $line not found in main directory, skipping"
+        fi
+      done <"$WORKTREE_INCLUDE_FILE"
+    else
+      echo "[wt] Warning: .worktreeinclude file not found"
+    fi
+
+    local CLAUDE_SETTINGS="$MAIN_DIR/.claude/settings.local.json"
+    if [ -f "$CLAUDE_SETTINGS" ]; then
+      echo "[wt] Copying .claude/settings.local.json..."
+      mkdir -p "$WORKTREE_DIR/.claude"
+      if ! cp "$CLAUDE_SETTINGS" "$WORKTREE_DIR/.claude/settings.local.json"; then
+        echo "[wt] ERROR: Failed to copy .claude/settings.local.json"
+        copy_failed=true
       fi
+    fi
 
-      local SOURCE="$MAIN_DIR/$line"
-      local TARGET="$WORKTREE_DIR/$line"
-
-      if [ -e "$SOURCE" ]; then
-        echo "  Copying $line..."
-        cp -r "$SOURCE" "$TARGET"
-      else
-        echo "  Warning: $line does not exist in main directory, skipping"
-      fi
-    done <"$WORKTREE_INCLUDE_FILE"
-  else
-    echo "Warning: .worktreeinclude file not found"
-  fi
-
-  # Always copy Claude permissions file if it exists
-  local CLAUDE_SETTINGS="$MAIN_DIR/.claude/settings.local.json"
-  if [ -f "$CLAUDE_SETTINGS" ]; then
-    echo "  Copying .claude/settings.local.json..."
-    mkdir -p "$WORKTREE_DIR/.claude"
-    cp "$CLAUDE_SETTINGS" "$WORKTREE_DIR/.claude/settings.local.json"
-  fi
+    if [ "$copy_failed" = true ]; then
+      echo "[wt] WARNING: Background copying completed with errors - some files may be missing"
+    else
+      echo "[wt] Background copying complete - worktree fully ready"
+    fi
+  ) &
 
   echo ""
-  echo "Worktree created successfully!"
+  echo "Worktree created. Changing to directory now."
+  echo "WARNING: Files are still being copied in the background."
+  echo "         Avoid running build tools or package managers until you see '[wt] Background copying complete'."
+  echo ""
 
   cd "$WORKTREE_DIR"
 }
