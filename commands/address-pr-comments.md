@@ -56,6 +56,10 @@ If no PR number or URL is provided, STOP and ask the user to provide one.
       Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
       ```
    3. Use git commit (not git commit --amend) to create a new atomic commit
+   4. Reply to the comment with a brief summary of what was done:
+      - For review comments (inline): `gh api repos/:owner/:repo/pulls/<PR_NUMBER>/comments/<COMMENT_ID>/replies -f body="<reply>"`
+      - For issue comments (general): `gh api repos/:owner/:repo/issues/<PR_NUMBER>/comments -f body="<reply>"`
+      - The reply should briefly describe what change was made and reference the commit SHA
 
 5. **Handle Complex Comments**
    For each comment that needs clarification:
@@ -67,6 +71,7 @@ If no PR number or URL is provided, STOP and ask the user to provide one.
       - Why you recommend that approach
    3. After user selection, implement the chosen approach
    4. Create an atomic commit as described in step 4
+   5. Reply to the comment with a brief summary of the chosen approach and what was done (as described in step 4.4)
 
 6. **Summary**
    After processing all comments:
