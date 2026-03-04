@@ -11,14 +11,42 @@ If no PR number or URL is provided, STOP and ask the user to provide one.
    2. Otherwise, treat $ARGUMENTS as the PR number directly
    3. Use `gh pr view <PR_NUMBER> --json number,title,url` to verify the PR exists and get its details
 
-2. **Fetch PR Comments**
-   1. Use `gh api repos/:owner/:repo/pulls/<PR_NUMBER>/comments` to get review comments on specific code lines
-   2. Use `gh api repos/:owner/:repo/issues/<PR_NUMBER>/comments` to get general PR comments
-   3. Parse the JSON responses to extract:
+2. **Fetch Unresolved PR Comments**
+   1. Use the GraphQL API to fetch only **unresolved** review threads:
+      ```
+      gh api graphql -f query='
+        query($owner: String!, $repo: String!, $pr: Int!) {
+          repository(owner: $owner, name: $repo) {
+            pullRequest(number: $pr) {
+              reviewThreads(first: 100) {
+                nodes {
+                  isResolved
+                  id
+                  comments(first: 10) {
+                    nodes {
+                      id
+                      databaseId
+                      body
+                      author { login }
+                      path
+                      line
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ' -f owner=OWNER -f repo=REPO -F pr=PR_NUMBER
+      ```
+      Filter the results to only include threads where `isResolved` is `false`.
+   2. Use `gh api repos/:owner/:repo/issues/<PR_NUMBER>/comments` to get general (non-review) PR comments — these have no resolved state so include all of them.
+   3. Parse the responses to extract for each unresolved item:
       - Comment author
       - Comment body
       - File path and line number (for review comments)
-      - Comment ID for reference
+      - Comment ID (`databaseId`) for reference and replies
+   4. If there are no unresolved comments, inform the user and stop.
 
 3. **Analyze Each Comment**
    For each comment, wrap your analysis in `<analysis>` tags to determine:
