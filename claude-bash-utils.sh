@@ -73,6 +73,21 @@ wt() {
       fi
     fi
 
+    # Run worktree-setup.sh if present
+    local SETUP_SCRIPT="$MAIN_DIR/worktree-setup.sh"
+    if [ -f "$SETUP_SCRIPT" ]; then
+      echo "[wt] Running worktree-setup.sh..."
+      cd "$WORKTREE_DIR"
+      if bash "$SETUP_SCRIPT"; then
+        echo "[wt] worktree-setup.sh completed successfully"
+      else
+        echo "[wt] ERROR: worktree-setup.sh failed"
+        copy_failed=true
+      fi
+    else
+      echo "[wt] No worktree-setup.sh found, skipping setup"
+    fi
+
     if [ "$copy_failed" = true ]; then
       echo "[wt] WARNING: Background copying completed with errors - some files may be missing"
     else

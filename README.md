@@ -26,6 +26,7 @@ Creates a new git worktree in a sibling `trees/<repo-name>/<branch-name>` direct
 - If the branch exists: checks it out in the new worktree
 - If the branch doesn't exist: creates a new branch and worktree
 - Copies files/directories listed in `.worktreeinclude` (if present)
+- Runs `worktree-setup.sh` after copying (if present) — useful for installing dependencies or other setup steps
 - Automatically changes into the new worktree directory
 
 **Example:**
@@ -89,6 +90,25 @@ dist
 ```
 
 When you run `wt new-branch`, these files/directories will be copied from the main worktree to the new worktree.
+
+## Optional: worktree-setup.sh Script
+
+Create a `worktree-setup.sh` file in your repository root to run custom setup steps after a new worktree is created. It runs inside the new worktree directory, so relative paths work as expected.
+
+Common uses:
+
+- Installing dependencies (e.g. `npm install`, `bundle install`)
+- Generating config files from templates
+- Running database setup scripts
+
+**Example `worktree-setup.sh`:**
+
+```bash
+#!/bin/bash
+npm install
+```
+
+The script runs in the background alongside the file copy, after all `.worktreeinclude` files have been copied. Output is prefixed with `[wt]`. If the script exits with a non-zero status, you'll see `[wt] ERROR: worktree-setup.sh failed` instead of the normal completion message.
 
 ## Workflow Example
 
