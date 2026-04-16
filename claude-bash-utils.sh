@@ -165,24 +165,27 @@ wtd() {
       cd "$MAIN_DIR"
     fi
 
-    # Remove the worktree
-    git worktree remove --force "$WORKTREE_PATH" 2>/dev/null
+    # Run slow cleanup in background
+    (
+      git worktree remove --force "$WORKTREE_PATH" 2>/dev/null
 
-    # Delete the branch only if -d flag was passed
-    if [ "$DELETE_BRANCH" = true ]; then
-      if git show-ref --verify --quiet "refs/heads/$BRANCH"; then
-        git branch -D "$BRANCH"
-        echo "Branch '$BRANCH' deleted"
-      else
-        echo "Warning: Branch '$BRANCH' not found, skipping branch deletion"
+      # Delete the branch only if -d flag was passed
+      if [ "$DELETE_BRANCH" = true ]; then
+        if git show-ref --verify --quiet "refs/heads/$BRANCH"; then
+          git branch -D "$BRANCH"
+          echo "[wtd] Branch '$BRANCH' deleted"
+        else
+          echo "[wtd] Warning: Branch '$BRANCH' not found, skipping branch deletion"
+        fi
       fi
-    fi
 
-    # Clean up directory if it still exists
-    if [ -d "$WORKTREE_PATH" ]; then
-      echo "Removing directory: $WORKTREE_PATH"
-      rm -rf "$WORKTREE_PATH"
-    fi
+      # Clean up directory if it still exists
+      if [ -d "$WORKTREE_PATH" ]; then
+        rm -rf "$WORKTREE_PATH"
+      fi
+
+      echo "[wtd] Cleanup complete"
+    ) &
 
     echo "Worktree deleted successfully!"
 
@@ -243,24 +246,27 @@ wtd() {
     # Change to main directory before removing
     cd "$ACTUAL_MAIN_DIR"
 
-    # Remove the worktree
-    git worktree remove --force "$WORKTREE_PATH" 2>/dev/null
+    # Run slow cleanup in background
+    (
+      git worktree remove --force "$WORKTREE_PATH" 2>/dev/null
 
-    # Delete the branch only if -d flag was passed
-    if [ "$DELETE_BRANCH" = true ]; then
-      if git show-ref --verify --quiet "refs/heads/$BRANCH"; then
-        git branch -D "$BRANCH"
-        echo "Branch '$BRANCH' deleted"
-      else
-        echo "Warning: Branch '$BRANCH' not found, skipping branch deletion"
+      # Delete the branch only if -d flag was passed
+      if [ "$DELETE_BRANCH" = true ]; then
+        if git show-ref --verify --quiet "refs/heads/$BRANCH"; then
+          git branch -D "$BRANCH"
+          echo "[wtd] Branch '$BRANCH' deleted"
+        else
+          echo "[wtd] Warning: Branch '$BRANCH' not found, skipping branch deletion"
+        fi
       fi
-    fi
 
-    # Clean up directory if it still exists
-    if [ -d "$WORKTREE_PATH" ]; then
-      echo "Removing directory: $WORKTREE_PATH"
-      rm -rf "$WORKTREE_PATH"
-    fi
+      # Clean up directory if it still exists
+      if [ -d "$WORKTREE_PATH" ]; then
+        rm -rf "$WORKTREE_PATH"
+      fi
+
+      echo "[wtd] Cleanup complete"
+    ) &
 
     echo ""
     echo "Worktree deleted successfully!"
