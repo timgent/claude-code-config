@@ -9,20 +9,36 @@ wt() {
   fi
 
   local BRANCH=$1
-  local MAIN_DIR=$(git rev-parse --show-toplevel 2>/dev/null)
 
-  if [ -z "$MAIN_DIR" ]; then
+  if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     echo "Error: Not in a git repository"
+    return 1
+  fi
+
+  # SOURCE_DIR is where we copy dependency files from — the current working
+  # tree, where deps like node_modules are actually populated.
+  local SOURCE_DIR
+  SOURCE_DIR=$(git rev-parse --show-toplevel 2>/dev/null)
+
+  # MAIN_DIR is used only for path layout (where to put the new worktree).
+  # Always resolve the actual main worktree — the first entry in
+  # `git worktree list --porcelain` — so running wt from inside an existing
+  # worktree doesn't nest trees/<repo>/<branch>/trees/<repo>/...
+  local MAIN_DIR
+  MAIN_DIR=$(git worktree list --porcelain | awk '/^worktree / { print substr($0, 10); exit }')
+
+  if [ -z "$MAIN_DIR" ] || [ -z "$SOURCE_DIR" ]; then
+    echo "Error: Could not determine worktree paths"
     return 1
   fi
 
   local REPO_NAME=$(basename "$MAIN_DIR")
   local PARENT_DIR=$(dirname "$MAIN_DIR")
   local WORKTREE_DIR="$PARENT_DIR/trees/$REPO_NAME/$BRANCH"
-  local WORKTREE_INCLUDE_FILE="$MAIN_DIR/.worktreeinclude"
+  local WORKTREE_INCLUDE_FILE="$SOURCE_DIR/.worktreeinclude"
 
   echo "Creating worktree for branch: $BRANCH"
-  echo "Main directory: $MAIN_DIR"
+  echo "Source directory: $SOURCE_DIR"
   echo "Worktree directory: $WORKTREE_DIR"
 
   # Create trees directory if it doesn't exist (sibling to repo)
@@ -47,7 +63,7 @@ wt() {
     if [ -f "$WORKTREE_INCLUDE_FILE" ]; then
       while IFS= read -r line || [ -n "$line" ]; do
         [ -z "$line" ] && continue
-        local SOURCE="$MAIN_DIR/$line"
+        local SOURCE="$SOURCE_DIR/$line"
         local TARGET="$WORKTREE_DIR/$line"
         if [ -e "$SOURCE" ]; then
           echo "[wt] Copying $line..."
@@ -56,14 +72,14 @@ wt() {
             copy_failed=true
           fi
         else
-          echo "[wt] Warning: $line not found in main directory, skipping"
+          echo "[wt] Warning: $line not found in source directory, skipping"
         fi
       done <"$WORKTREE_INCLUDE_FILE"
     else
       echo "[wt] Warning: .worktreeinclude file not found"
     fi
 
-    local CLAUDE_SETTINGS="$MAIN_DIR/.claude/settings.local.json"
+    local CLAUDE_SETTINGS="$SOURCE_DIR/.claude/settings.local.json"
     if [ -f "$CLAUDE_SETTINGS" ]; then
       echo "[wt] Copying .claude/settings.local.json..."
       mkdir -p "$WORKTREE_DIR/.claude"
@@ -74,7 +90,7 @@ wt() {
     fi
 
     # Run worktree-setup.sh if present
-    local SETUP_SCRIPT="$MAIN_DIR/worktree-setup.sh"
+    local SETUP_SCRIPT="$SOURCE_DIR/worktree-setup.sh"
     if [ -f "$SETUP_SCRIPT" ]; then
       echo "[wt] Running worktree-setup.sh..."
       cd "$WORKTREE_DIR"
