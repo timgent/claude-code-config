@@ -181,9 +181,22 @@ wtd() {
       cd "$MAIN_DIR"
     fi
 
+    # Synchronously rename the worktree out of the way so it disappears from
+    # ls/tab-completion immediately. The slow rm -rf happens in the background.
+    local TRASH_PATH=""
+    if [ -d "$WORKTREE_PATH" ]; then
+      TRASH_PATH="$WORKTREE_PATH.wtd-trash.$$"
+      mv "$WORKTREE_PATH" "$TRASH_PATH" 2>/dev/null || TRASH_PATH=""
+    fi
+
     # Run slow cleanup in background
     (
-      git worktree remove --force "$WORKTREE_PATH" 2>/dev/null
+      # If we moved the directory, prune metadata; otherwise use remove --force.
+      if [ -n "$TRASH_PATH" ]; then
+        git worktree prune 2>/dev/null
+      else
+        git worktree remove --force "$WORKTREE_PATH" 2>/dev/null
+      fi
 
       # Delete the branch only if -d flag was passed
       if [ "$DELETE_BRANCH" = true ]; then
@@ -195,8 +208,10 @@ wtd() {
         fi
       fi
 
-      # Clean up directory if it still exists
-      if [ -d "$WORKTREE_PATH" ]; then
+      # Clean up the trash directory (or original path if rename failed)
+      if [ -n "$TRASH_PATH" ] && [ -d "$TRASH_PATH" ]; then
+        rm -rf "$TRASH_PATH"
+      elif [ -d "$WORKTREE_PATH" ]; then
         rm -rf "$WORKTREE_PATH"
       fi
 
@@ -262,9 +277,22 @@ wtd() {
     # Change to main directory before removing
     cd "$ACTUAL_MAIN_DIR"
 
+    # Synchronously rename the worktree out of the way so it disappears from
+    # ls/tab-completion immediately. The slow rm -rf happens in the background.
+    local TRASH_PATH=""
+    if [ -d "$WORKTREE_PATH" ]; then
+      TRASH_PATH="$WORKTREE_PATH.wtd-trash.$$"
+      mv "$WORKTREE_PATH" "$TRASH_PATH" 2>/dev/null || TRASH_PATH=""
+    fi
+
     # Run slow cleanup in background
     (
-      git worktree remove --force "$WORKTREE_PATH" 2>/dev/null
+      # If we moved the directory, prune metadata; otherwise use remove --force.
+      if [ -n "$TRASH_PATH" ]; then
+        git worktree prune 2>/dev/null
+      else
+        git worktree remove --force "$WORKTREE_PATH" 2>/dev/null
+      fi
 
       # Delete the branch only if -d flag was passed
       if [ "$DELETE_BRANCH" = true ]; then
@@ -276,8 +304,10 @@ wtd() {
         fi
       fi
 
-      # Clean up directory if it still exists
-      if [ -d "$WORKTREE_PATH" ]; then
+      # Clean up the trash directory (or original path if rename failed)
+      if [ -n "$TRASH_PATH" ] && [ -d "$TRASH_PATH" ]; then
+        rm -rf "$TRASH_PATH"
+      elif [ -d "$WORKTREE_PATH" ]; then
         rm -rf "$WORKTREE_PATH"
       fi
 
