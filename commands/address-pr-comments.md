@@ -72,7 +72,7 @@ If no PR number or URL is provided, STOP and ask the user to provide one.
 
 4. **Address Straightforward Comments**
    For each straightforward comment:
-   1. Make the necessary code changes
+   1. Make the necessary code changes. If it is a bug write a test first, check it fails for the right reason, and then fix.
    2. Create a commit with a descriptive message that references the comment:
       ```
       Address PR comment: [brief description]
