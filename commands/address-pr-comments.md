@@ -1,15 +1,14 @@
 Address PR comments by analyzing feedback and making atomic commits for each comment.
 
-The PR number or URL is specified as: $ARGUMENTS
-
-If no PR number or URL is provided, STOP and ask the user to provide one.
+An optional PR number or URL may be specified as: $ARGUMENTS
 
 ## Process
 
 1. **Extract PR Information**
-   1. If $ARGUMENTS contains a GitHub URL, extract the PR number from it
-   2. Otherwise, treat $ARGUMENTS as the PR number directly
-   3. Use `gh pr view <PR_NUMBER> --json number,title,url` to verify the PR exists and get its details
+   1. If $ARGUMENTS is provided and contains a GitHub URL, extract the PR number from it
+   2. If $ARGUMENTS is provided without a URL, treat it as the PR number directly
+   3. If $ARGUMENTS is empty, infer the PR from the current branch by running `gh pr view --json number,title,url` — this automatically finds the open PR for the current branch. If no PR is found, inform the user and stop.
+   4. Use `gh pr view <PR_NUMBER> --json number,title,url` to verify the PR exists and get its details (skip if already fetched in step 3)
 
 2. **Fetch Unresolved PR Comments**
    1. Use the GraphQL API to fetch only **unresolved** review threads:
@@ -72,7 +71,7 @@ If no PR number or URL is provided, STOP and ask the user to provide one.
 
 4. **Address Straightforward Comments**
    For each straightforward comment:
-   1. Make the necessary code changes. If it is a bug write a test first, check it fails for the right reason, and then fix.
+   1. Make the necessary code changes. If it is a bug write a test first if it makes sense, check it fails for the right reason, and then fix.
    2. Create a commit with a descriptive message that references the comment:
       ```
       Address PR comment: [brief description]
@@ -81,7 +80,7 @@ If no PR number or URL is provided, STOP and ask the user to provide one.
 
       Addresses feedback from [author] on [file:line if applicable]
 
-      Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+      Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
       ```
    3. Use git commit (not git commit --amend) to create a new atomic commit
    4. Reply to the comment with a brief summary of what was done:
