@@ -44,16 +44,17 @@ wt() {
   # Create trees directory if it doesn't exist (sibling to repo)
   mkdir -p "$PARENT_DIR/trees/$REPO_NAME"
 
-  # Check if branch exists locally or remotely
+  # Check if branch exists locally
   if git show-ref --verify --quiet "refs/heads/$BRANCH"; then
     echo "Local branch $BRANCH exists, checking it out..."
     git worktree add "$WORKTREE_DIR" "$BRANCH"
-  elif git show-ref --verify --quiet "refs/remotes/origin/$BRANCH"; then
-    echo "Remote branch origin/$BRANCH exists, creating local tracking branch..."
-    git worktree add --track -b "$BRANCH" "$WORKTREE_DIR" "origin/$BRANCH"
   else
-    echo "Branch $BRANCH doesn't exist locally or remotely, creating it..."
-    git worktree add -b "$BRANCH" "$WORKTREE_DIR"
+    # Branch off current HEAD so running wt from inside a worktree creates
+    # a child branch off that worktree, not main. We deliberately do NOT
+    # auto-track origin/$BRANCH if it happens to exist — a stale remote ref
+    # pointing at main would silently rebase us onto main.
+    echo "Creating new branch $BRANCH from current HEAD..."
+    git worktree add -b "$BRANCH" "$WORKTREE_DIR" HEAD
   fi
 
   # Copy files in background so the shell is immediately usable
@@ -66,7 +67,6 @@ wt() {
         local SOURCE="$SOURCE_DIR/$line"
         local TARGET="$WORKTREE_DIR/$line"
         if [ -e "$SOURCE" ]; then
-          echo "[wt] Copying $line..."
           if ! cp -r "$SOURCE" "$TARGET"; then
             echo "[wt] ERROR: Failed to copy $line"
             copy_failed=true
@@ -81,7 +81,6 @@ wt() {
 
     local CLAUDE_SETTINGS="$SOURCE_DIR/.claude/settings.local.json"
     if [ -f "$CLAUDE_SETTINGS" ]; then
-      echo "[wt] Copying .claude/settings.local.json..."
       mkdir -p "$WORKTREE_DIR/.claude"
       if ! cp "$CLAUDE_SETTINGS" "$WORKTREE_DIR/.claude/settings.local.json"; then
         echo "[wt] ERROR: Failed to copy .claude/settings.local.json"
@@ -92,29 +91,25 @@ wt() {
     # Run worktree-setup.sh if present
     local SETUP_SCRIPT="$SOURCE_DIR/worktree-setup.sh"
     if [ -f "$SETUP_SCRIPT" ]; then
-      echo "[wt] Running worktree-setup.sh..."
       cd "$WORKTREE_DIR"
-      if bash "$SETUP_SCRIPT"; then
-        echo "[wt] worktree-setup.sh completed successfully"
-      else
+      if ! bash "$SETUP_SCRIPT"; then
         echo "[wt] ERROR: worktree-setup.sh failed"
         copy_failed=true
       fi
-    else
-      echo "[wt] No worktree-setup.sh found, skipping setup"
     fi
 
+    # Stay silent on success so late-finishing output can't disrupt an
+    # already-started session; only surface problems.
     if [ "$copy_failed" = true ]; then
       echo "[wt] WARNING: Background copying completed with errors - some files may be missing"
-    else
-      echo "[wt] Background copying complete - worktree fully ready"
     fi
   ) &
 
   echo ""
   echo "Worktree created. Changing to directory now."
   echo "WARNING: Files are still being copied in the background."
-  echo "         Avoid running build tools or package managers until you see '[wt] Background copying complete'."
+  echo "         Give it a few seconds before running build tools or package managers."
+  echo "         Copying is silent on success; only errors will be reported."
   echo ""
 
   cd "$WORKTREE_DIR"
