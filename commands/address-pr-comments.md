@@ -100,14 +100,17 @@ An optional PR number or URL may be specified as: $ARGUMENTS
    4. Create an atomic commit as described in step 4
    5. Reply to the comment with a brief summary of the chosen approach and what was done (as described in step 4.4)
 
-6. **Summary**
+6. **Push Commits**
+   1. Run tests if a test suite is available, before pushing
+   2. Push the commits to the remote with `git push` — do not ask the user for confirmation first
+
+7. **Summary**
    After processing all comments:
    1. Show a summary of what was addressed:
       - Number of comments addressed autonomously
       - Number of comments that required user input
       - List of commits created
-   2. Remind the user to push the commits if they're satisfied
-   3. Suggest running tests if applicable
+   2. Confirm the commits were pushed
 
 ## Important Notes
 
@@ -117,4 +120,4 @@ An optional PR number or URL may be specified as: $ARGUMENTS
 - If you're unsure whether a comment is straightforward, err on the side of asking the user
 - Read files before editing them
 - Run tests after making changes if a test suite is available
-- Do not push commits automatically - let the user review and push manually
+- Push the commits automatically once all comments are addressed - do not ask for confirmation before pushing
