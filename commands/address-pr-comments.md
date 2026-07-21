@@ -82,6 +82,7 @@ An optional PR number or URL may be specified as: $ARGUMENTS
 
       Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
       ```
+      If the PR is linked to a Linear ticket, reference it with a **non-closing** magic word (e.g. `Ref ENG-123`) so addressing review comments does not auto-complete the ticket. Never use closing words (fixes, closes, resolves, etc.). See https://linear.app/docs/github#link-through-pull-requests
    3. Use git commit (not git commit --amend) to create a new atomic commit
    4. Reply to the comment with a brief summary of what was done:
       - For review comments (inline): `gh api repos/:owner/:repo/pulls/<PR_NUMBER>/comments/<COMMENT_ID>/replies -f body="<reply>"`
