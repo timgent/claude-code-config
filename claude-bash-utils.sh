@@ -104,6 +104,7 @@ wt() {
       echo "[wt] WARNING: Background copying completed with errors - some files may be missing"
     fi
   ) &
+  disown
 
   echo ""
   echo "Worktree created. Changing to directory now."
@@ -212,6 +213,7 @@ wtd() {
 
       echo "[wtd] Cleanup complete"
     ) &
+    disown
 
     echo "Worktree deleted successfully!"
 
@@ -308,6 +310,7 @@ wtd() {
 
       echo "[wtd] Cleanup complete"
     ) &
+    disown
 
     echo ""
     echo "Worktree deleted successfully!"
