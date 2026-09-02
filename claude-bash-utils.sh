@@ -36,6 +36,8 @@ wt() {
   local PARENT_DIR=$(dirname "$MAIN_DIR")
   local WORKTREE_DIR="$PARENT_DIR/trees/$REPO_NAME/$BRANCH"
   local WORKTREE_INCLUDE_FILE="$SOURCE_DIR/.worktreeinclude"
+  # Sibling of the worktree, not inside it, so it never shows up as untracked.
+  local SETUP_LOG="$WORKTREE_DIR.wt-setup.log"
 
   echo "Creating worktree for branch: $BRANCH"
   echo "Source directory: $SOURCE_DIR"
@@ -57,7 +59,15 @@ wt() {
     git worktree add -b "$BRANCH" "$WORKTREE_DIR" HEAD
   fi
 
-  # Copy files in background so the shell is immediately usable
+  # Copy files in background so the shell is immediately usable.
+  #
+  # </dev/null is load-bearing. Unlike bash, zsh under job control leaves a
+  # background job's fds on the controlling terminal, and `disown` only hides
+  # the job — it changes neither the fds nor the process group. Any descendant
+  # that then touches the tty interferes with whatever holds the foreground,
+  # normally a Claude Code session started in this worktree: a read or a
+  # tcsetattr takes SIGTTIN/SIGTTOU and wedges the job with no notification,
+  # and a write corrupts the foreground app's screen and key reporting.
   (
     local copy_failed=false
 
@@ -98,19 +108,18 @@ wt() {
       fi
     fi
 
-    # Stay silent on success so late-finishing output can't disrupt an
-    # already-started session; only surface problems.
     if [ "$copy_failed" = true ]; then
       echo "[wt] WARNING: Background copying completed with errors - some files may be missing"
     fi
-  ) &
+  ) </dev/null >"$SETUP_LOG" 2>&1 &
   disown
 
   echo ""
   echo "Worktree created. Changing to directory now."
   echo "WARNING: Files are still being copied in the background."
   echo "         Give it a few seconds before running build tools or package managers."
-  echo "         Copying is silent on success; only errors will be reported."
+  echo "         Progress and any errors are logged to:"
+  echo "         $SETUP_LOG"
   echo ""
 
   cd "$WORKTREE_DIR"
@@ -180,12 +189,14 @@ wtd() {
     # Synchronously rename the worktree out of the way so it disappears from
     # ls/tab-completion immediately. The slow rm -rf happens in the background.
     local TRASH_PATH=""
+    local CLEANUP_LOG="$WORKTREE_PATH.wtd-cleanup-errors.log"
     if [ -d "$WORKTREE_PATH" ]; then
       TRASH_PATH="$WORKTREE_PATH.wtd-trash.$$"
       mv "$WORKTREE_PATH" "$TRASH_PATH" 2>/dev/null || TRASH_PATH=""
     fi
 
-    # Run slow cleanup in background
+    # Run slow cleanup in background, with its fds off the terminal — see the
+    # </dev/null note in wt.
     (
       # If we moved the directory, prune metadata; otherwise use remove --force.
       if [ -n "$TRASH_PATH" ]; then
@@ -211,8 +222,10 @@ wtd() {
         rm -rf "$WORKTREE_PATH"
       fi
 
-      echo "[wtd] Cleanup complete"
-    ) &
+      rm -f "$WORKTREE_PATH.wt-setup.log"
+
+      [ -s "$CLEANUP_LOG" ] || rm -f "$CLEANUP_LOG"
+    ) </dev/null >"$CLEANUP_LOG" 2>&1 &
     disown
 
     echo "Worktree deleted successfully!"
@@ -277,12 +290,14 @@ wtd() {
     # Synchronously rename the worktree out of the way so it disappears from
     # ls/tab-completion immediately. The slow rm -rf happens in the background.
     local TRASH_PATH=""
+    local CLEANUP_LOG="$WORKTREE_PATH.wtd-cleanup-errors.log"
     if [ -d "$WORKTREE_PATH" ]; then
       TRASH_PATH="$WORKTREE_PATH.wtd-trash.$$"
       mv "$WORKTREE_PATH" "$TRASH_PATH" 2>/dev/null || TRASH_PATH=""
     fi
 
-    # Run slow cleanup in background
+    # Run slow cleanup in background, with its fds off the terminal — see the
+    # </dev/null note in wt.
     (
       # If we moved the directory, prune metadata; otherwise use remove --force.
       if [ -n "$TRASH_PATH" ]; then
@@ -308,8 +323,10 @@ wtd() {
         rm -rf "$WORKTREE_PATH"
       fi
 
-      echo "[wtd] Cleanup complete"
-    ) &
+      rm -f "$WORKTREE_PATH.wt-setup.log"
+
+      [ -s "$CLEANUP_LOG" ] || rm -f "$CLEANUP_LOG"
+    ) </dev/null >"$CLEANUP_LOG" 2>&1 &
     disown
 
     echo ""
