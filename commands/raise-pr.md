@@ -20,9 +20,12 @@ as succinct as possible!
   1. Write the body to a file and pass `--body-file`, so backticks and fenced blocks survive the shell
 6. Adding inline walkthrough comments for the key changes, once the PR exists
   1. Each comment body starts with the literal text `Claude Walkthrough: ` at position 0 — not bold, not a heading. Other skills match on that exact prefix to tell these apart from review feedback
-  2. Explain the reasoning and the consequence of the change, clearly and concisely. Do not restate what the lines do
-  3. Only comment where the *why* is not obvious from the diff, and keep it to a handful across the whole PR. The PR description carries the shape of the change; these carry the why at specific points
-  4. Post them as a single review with `event: "COMMENT"`, so the author gets one notification:
+  2. Decide the handful of things a reviewer must understand about the change *as a whole* first, then find the line each belongs on. Do not walk the diff looking for things to say
+  3. The bar: a reviewer who skipped the comment could still approve this PR, but would later make a *wrong change* — add the next case in the wrong layer, cross the new boundary, break an invariant that lives in another file. Anything true from reading the hunk alone does not clear it
+  4. Anchor each one on the declaration that introduces the seam — a new function signature, type, export, or import — never on a line inside a body
+  5. Put a "start here" comment on whichever changed file sorts first, naming the reading order for the rest. GitHub lists review comments in file order
+  6. Keep each to 2-4 sentences, at most one per file. Where the description has a diagram, point at it rather than re-explaining the shape
+  7. Post them as a single review with `event: "COMMENT"`, so the author gets one notification:
     1. Get the head SHA with `gh pr view --json headRefOid -q .headRefOid`
     2. Write the review to a JSON file (`commit_id`, `event`, and a `comments` array of `{path, line, side: "RIGHT", body}`) and pass it with `gh api repos/:owner/:repo/pulls/<PR_NUMBER>/reviews --input <file>`. `-f` cannot build the nested array
     3. Anchor each comment on an added or changed line — the API rejects a `line` that falls outside a diff hunk
