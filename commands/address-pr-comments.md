@@ -40,12 +40,15 @@ An optional PR number or URL may be specified as: $ARGUMENTS
       ```
       Filter the results to only include threads where `isResolved` is `false`.
    2. Use `gh api repos/:owner/:repo/issues/<PR_NUMBER>/comments` to get general (non-review) PR comments — these have no resolved state so include all of them.
-   3. Parse the responses to extract for each unresolved item:
+   3. Discard every comment whose body starts with `Claude Walkthrough:`, from both the review threads and the general comments. These explain the change; they are not feedback to address
+      - A thread with no comments left after the discard is skipped entirely
+      - A thread where someone replied under a walkthrough is kept, and the reply is the request. The walkthrough is context for it, not the ask
+   4. Parse the responses to extract for each unresolved item:
       - Comment author
       - Comment body
       - File path and line number (for review comments)
       - Comment ID (`databaseId`) for reference and replies
-   4. If there are no unresolved comments, inform the user and stop.
+   5. If nothing is left after filtering, inform the user and stop.
 
 3. **Analyze Each Comment**
    For each comment, wrap your analysis in `<analysis>` tags to determine:

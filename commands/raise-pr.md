@@ -18,4 +18,12 @@ as succinct as possible!
   4. See https://linear.app/docs/github#magic-words
 5. Uses the gh CLI to raise the PR
   1. Write the body to a file and pass `--body-file`, so backticks and fenced blocks survive the shell
-6. Returns the link to the PR to the user
+6. Adding inline walkthrough comments for the key changes, once the PR exists
+  1. Each comment body starts with the literal text `Claude Walkthrough: ` at position 0 — not bold, not a heading. Other skills match on that exact prefix to tell these apart from review feedback
+  2. Explain the reasoning and the consequence of the change, clearly and concisely. Do not restate what the lines do
+  3. Only comment where the *why* is not obvious from the diff, and keep it to a handful across the whole PR. The PR description carries the shape of the change; these carry the why at specific points
+  4. Post them as a single review with `event: "COMMENT"`, so the author gets one notification:
+    1. Get the head SHA with `gh pr view --json headRefOid -q .headRefOid`
+    2. Write the review to a JSON file (`commit_id`, `event`, and a `comments` array of `{path, line, side: "RIGHT", body}`) and pass it with `gh api repos/:owner/:repo/pulls/<PR_NUMBER>/reviews --input <file>`. `-f` cannot build the nested array
+    3. Anchor each comment on an added or changed line — the API rejects a `line` that falls outside a diff hunk
+7. Returns the link to the PR to the user
